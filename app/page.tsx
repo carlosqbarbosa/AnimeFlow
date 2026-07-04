@@ -1,65 +1,143 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useRef } from "react";
+import { usePomodoroTimer } from "../hooks/usePomodoroTimer";
+import { useMediaLibrary } from "../hooks/useMediaLibrary";
+import BackgroundScene from "../components/pomodoro/BackgroundScene";
+import TimerRing from "../components/pomodoro/TimerRing";
+import ModeTabs from "../components/pomodoro/ModeTabs";
+import SettingsPanel from "../components/pomodoro/SettingsPanel";
+import MediaStrip from "../components/pomodoro/MediaStrip";
+import AddMediaModal from "../components/pomodoro/AddMediaModal";
+import { MODES } from "../lib/defaultScenes";
+
+export default function PomodoroPage() {
+  const timer = usePomodoroTimer();
+  const media = useMediaLibrary();
+  const [showSettings, setShowSettings] = useState(false);
+  const [showAddMedia, setShowAddMedia] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const modeColor = MODES[timer.mode as keyof typeof MODES].color;
+  const isBreak = timer.mode !== "focus";
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div
+      ref={containerRef}
+      style={{
+        position: "relative",
+        width: "100%",
+        minHeight: "100vh",
+        overflow: "hidden",
+        fontFamily: "'Inter', sans-serif",
+        color: "#F5EFE3",
+        isolation: "isolate",
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Inter:wght@400;500;600&display=swap');
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .pg-fade { animation: fadeIn 1.1s ease; }
+        .pg-btn {
+          background: rgba(255,255,255,0.10);
+          border: 1px solid rgba(255,255,255,0.22);
+          color: #F5EFE3;
+          border-radius: 12px;
+          padding: 9px 16px;
+          font-family: 'Inter', sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background 0.15s ease;
+        }
+        .pg-btn:hover { background: rgba(255,255,255,0.18); }
+        .pg-btn-primary {
+          background: ${modeColor};
+          border: 1px solid ${modeColor};
+          color: #1a1608;
+          font-weight: 600;
+        }
+        .pg-btn-primary:hover { filter: brightness(1.08); }
+        .pg-input {
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.2);
+          color: #F5EFE3;
+          border-radius: 8px;
+          padding: 6px 10px;
+          font-family: 'Inter', sans-serif;
+          font-size: 13px;
+          width: 64px;
+        }
+        .pg-thumb {
+          width: 52px; height: 38px; border-radius: 8px; cursor: pointer;
+          border: 2px solid rgba(255,255,255,0.25);
+          flex-shrink: 0; position: relative; overflow: hidden;
+        }
+        .pg-thumb.active { border-color: #F5EFE3; }
+        .pg-thumb img, .pg-thumb video { width: 100%; height: 100%; object-fit: cover; }
+      `}</style>
+
+      <BackgroundScene scene={media.current} onVideoEnded={() => media.setActiveIndex((i) => (i + 1) % media.scenes.length)} />
+
+      <div style={{ position: "relative", zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px" }}>
+        <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 18, fontWeight: 600 }}>{media.current.name}</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="pg-btn" onClick={() => setShowSettings((v) => !v)}>
+            Ajustes
+          </button>
+          <button className="pg-btn" onClick={toggleFullscreen}>
+            Tela cheia
+          </button>
+        </div>
+      </div>
+
+      {showSettings && (
+        <SettingsPanel
+          settings={timer.settings}
+          onUpdateSetting={timer.updateSetting}
+          onUpdateCycles={timer.updateCycles}
+          autoAdvance={media.autoAdvance}
+          onToggleAutoAdvance={media.setAutoAdvance}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+      )}
+
+      <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px 0 10px" }}>
+        <ModeTabs mode={timer.mode} onSwitch={timer.switchMode} />
+
+        <TimerRing
+          secondsLeft={timer.secondsLeft}
+          totalForMode={timer.totalForMode}
+          color={modeColor}
+          caption={isBreak ? "Respire um pouco" : `Ciclo ${timer.completedFocusSessions + 1}`}
+        />
+
+        <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+          <button className="pg-btn pg-btn-primary" onClick={() => timer.setIsRunning((v) => !v)} style={{ minWidth: 96 }}>
+            {timer.isRunning ? "Pausar" : "Iniciar"}
+          </button>
+          <button className="pg-btn" onClick={timer.resetTimer}>
+            Reiniciar
+          </button>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
+
+      <MediaStrip
+        scenes={media.scenes}
+        activeIndex={media.activeIndex}
+        onSelect={media.setActiveIndex}
+        onRemove={media.removeMedia}
+        onAddClick={() => setShowAddMedia(true)}
+      />
+
+      {showAddMedia && <AddMediaModal onClose={() => setShowAddMedia(false)} onAddByUrl={media.addByUrl} onAddByUpload={media.addByUpload} />}
     </div>
   );
 }
