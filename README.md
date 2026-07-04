@@ -148,7 +148,7 @@ O AnimeFlow foi desenvolvido para tornar sessões de estudo e trabalho mais agra
 
 ## Autor
 
-**Carlos Henrique Queiroz Barbosa**
+**Carlos Barbosa**
 
 - GitHub: https://github.com/carlosqbarbosa
 - LinkedIn: https://www.linkedin.com/in/carlosqbarbosa/
