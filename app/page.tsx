@@ -120,10 +120,20 @@ export default function PomodoroPage() {
         />
 
         <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
-          <button className="pg-btn pg-btn-primary" onClick={() => timer.setIsRunning((v) => !v)} style={{ minWidth: 96 }}>
+          <button
+            data-cy="start-button"
+            className="pg-btn pg-btn-primary" 
+            onClick={() => timer.setIsRunning((v) => !v)} 
+            style={{ minWidth: 96 }}
+          >
             {timer.isRunning ? "Pausar" : "Iniciar"}
           </button>
-          <button className="pg-btn" onClick={timer.resetTimer}>
+
+          <button
+            data-cy="reset-button"
+            className="pg-btn" 
+            onClick={timer.resetTimer}
+          >
             Reiniciar
           </button>
         </div>

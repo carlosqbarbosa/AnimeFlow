@@ -34,7 +34,17 @@ export default function TimerRing({ secondsLeft, totalForMode, color, caption })
         <circle cx={markerX} cy={markerY} r="9" fill={color} style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.4))" }} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontFamily: "'Fredoka', sans-serif", fontSize: 44, fontWeight: 600, lineHeight: 1 }}>{formatTime(secondsLeft)}</div>
+        <div 
+          data-cy="timer" 
+          style={{ 
+            fontFamily: "'Fredoka', sans-serif", 
+            fontSize: 44, 
+            fontWeight: 600, 
+            lineHeight: 1 
+          }}
+        >
+          {formatTime(secondsLeft)}
+        </div>
         <div style={{ fontSize: 12, color: "#C9CFE6", marginTop: 6 }}>{caption}</div>
       </div>
     </div>
