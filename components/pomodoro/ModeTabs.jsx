@@ -6,6 +6,7 @@ export default function ModeTabs({ mode, onSwitch }) {
       {Object.values(MODES).map((m) => (
         <button
           key={m.key}
+          data-cy={`mode-${m.key}`}
           onClick={() => onSwitch(m.key)}
           className="pg-btn"
           style={{
