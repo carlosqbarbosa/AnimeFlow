@@ -5,7 +5,6 @@ import { getYouTubeId } from "../lib/youtube";
 const SCENES_KEY = "pomodoro:customScenes";
 
 function loadSavedScenes() {
-  if (typeof window === "undefined") return [];
   try {
     const saved = localStorage.getItem(SCENES_KEY);
     return saved ? JSON.parse(saved) : [];
@@ -14,29 +13,38 @@ function loadSavedScenes() {
   }
 }
 
-function persistableScenes(scenes) {
-  return scenes.filter((s) => s.id.startsWith("m-") && s.type !== "upload-only");
-}
-
 export function useMediaLibrary() {
+  // Sempre nasce só com as cenas padrão — igual no servidor e no cliente.
   const [scenes, setScenes] = useState(DEFAULT_SCENES);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [autoAdvance, setAutoAdvance] = useState(false);
+  const [autoAdvance, setAutoAdvance] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
   const slideshowRef = useRef(null);
 
+  // Só depois de montar no navegador é que lemos localStorage e a API local.
   useEffect(() => {
-  const saved = loadSavedScenes();
-
-  if (saved.length) {
-    setScenes(prev => [...prev, ...saved]);
-  }
-}, []);
+    const saved = loadSavedScenes();
+    if (saved.length) {
+      setScenes((prev) => [...prev, ...saved]);
+    }
+    fetch("/api/media")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.files?.length) {
+          setScenes((prev) => [...prev, ...data.files]);
+        }
+      })
+      .catch(() => {});
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
-    const toSave = persistableScenes(scenes).filter((s) => s.type === "image" || s.type === "video" || s.type === "youtube");
-    const safeToSave = toSave.filter((s) => !s.url?.startsWith("blob:"));
+    if (!hydrated) return;
+    const safeToSave = scenes.filter(
+      (s) => s.id.startsWith("m-") && !s.url?.startsWith("blob:")
+    );
     localStorage.setItem(SCENES_KEY, JSON.stringify(safeToSave));
-  }, [scenes]);
+  }, [scenes, hydrated]);
 
   const addByUrl = ({ url, type, name }) => {
     if (!url.trim()) return;
